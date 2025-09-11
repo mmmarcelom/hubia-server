@@ -147,10 +147,8 @@ class WorkflowClient:
             if not processor:
                 raise ValueError(f"Processador não encontrado para tipo: {task['action']}")
             
-            # Process the task
-            process_data = {"content": task['content']}
-            
-            result = await processor.process(process_data)
+            # Process the task - pass the entire task data
+            result = await processor.process(task)
             
             # Send successful response
             await self._send_response(task['task_id'], task['action'], True, result, None)

@@ -22,9 +22,43 @@ class ImageProcessor(BaseProcessor):
         ]
         self.allowed_extensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "tiff"]
     
+    def _prepare_image_data(self, content: str) -> Dict[str, Any]:
+        """Prepara dados de imagem a partir de data URL base64"""
+        try:
+            # Extract MIME type and base64 data
+            if content.startswith('data:'):
+                header, data = content.split(',', 1)
+                mime_type = header.split(';')[0].replace('data:', '')
+            else:
+                # Assume it's raw base64 data
+                mime_type = "image/jpeg"  # Default fallback
+                data = content
+            
+            # Decode base64 to get file size
+            image_data = base64.b64decode(data)
+            file_size = len(image_data)
+            
+            return {
+                "imageData": data,
+                "mimeType": mime_type,
+                "fileSize": file_size,
+                "fileName": None  # Base64 data doesn't have filename
+            }
+            
+        except Exception as e:
+            raise ValueError(f"Erro ao processar dados de imagem: {e}")
+    
     async def process(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Processa imagem e retorna descrição"""
         try:
+            # Extract image data from content field
+            if 'content' in data:
+                # The image data is in the content field
+                data = self._prepare_image_data(data['content'])
+            elif 'imageData' in data and ('mimeType' not in data or 'fileSize' not in data):
+                # Fallback for direct imageData
+                data = self._prepare_image_data(data['imageData'])
+            
             # Validate file size
             self.validate_file_size(data['fileSize'], self.config.max_image_size_bytes)
             
@@ -32,7 +66,7 @@ class ImageProcessor(BaseProcessor):
             self.validate_mime_type(data['mimeType'], self.allowed_mime_types)
             
             # Get file extension
-            file_extension = self._get_file_extension(data['mimeType'], data['fileName'])
+            file_extension = self._get_file_extension(data['mimeType'], data.get('fileName'))
             
             # Decode and save image file
             temp_file_path = self.decode_base64_data(data['imageData'], file_extension)
@@ -52,7 +86,7 @@ class ImageProcessor(BaseProcessor):
             print(f"❌ Erro no processamento de imagem: {e}")
             raise
     
-    def _get_file_extension(self, mime_type: str, filename: str) -> str:
+    def _get_file_extension(self, mime_type: str, filename: str = None) -> str:
         """Obtém extensão do arquivo"""
         # Try to get from filename first
         if filename and '.' in filename:
@@ -202,7 +236,7 @@ Seja detalhado mas conciso."""
             }
             
         except Exception as e:
-            logger.warning(f"⚠️ Erro ao fazer parse da descrição: {e}")
+            print(f"⚠️ Erro ao fazer parse da descrição: {e}")
             # Fallback to simple description
             return {
                 "description": description_text,

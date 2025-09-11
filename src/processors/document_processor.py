@@ -27,9 +27,54 @@ class DocumentProcessor(BaseProcessor):
         ]
         self.allowed_extensions = ["pdf", "doc", "docx", "xls", "xlsx", "txt", "csv"]
     
+    def _prepare_document_data(self, content: str) -> Dict[str, Any]:
+        """Prepara dados de documento a partir de data URL base64 ou texto"""
+        try:
+            # Check if it's a data URL
+            if content.startswith('data:'):
+                header, data = content.split(',', 1)
+                mime_type = header.split(';')[0].replace('data:', '')
+                file_data = data
+                
+                # Decode base64 to get file size
+                import base64
+                file_bytes = base64.b64decode(file_data)
+                file_size = len(file_bytes)
+                
+                return {
+                    "fileData": file_data,
+                    "mimeType": mime_type,
+                    "fileSize": file_size,
+                    "fileName": None,
+                    "content": content
+                }
+            else:
+                # It's plain text content
+                return {
+                    "content": content,
+                    "mimeType": "text/plain",
+                    "fileSize": len(content.encode('utf-8')),
+                    "fileName": None
+                }
+                
+        except Exception as e:
+            raise ValueError(f"Erro ao processar dados de documento: {e}")
+    
     async def process(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Processa documento e retorna sumarização"""
         try:
+            # Extract document data from content field
+            if 'content' in data:
+                # The document data is in the content field
+                data = self._prepare_document_data(data['content'])
+            elif 'fileData' in data and ('mimeType' not in data or 'fileSize' not in data):
+                # Fallback for direct fileData
+                data = self._prepare_document_data(data['fileData'])
+            
+            # Initialize variables
+            temp_file_path = None
+            file_extension = None
+            
             # Validate file size if file data is provided
             if 'fileSize' in data and data['fileSize']:
                 self.validate_file_size(data['fileSize'], self.config.max_document_size_bytes)
@@ -37,20 +82,19 @@ class DocumentProcessor(BaseProcessor):
             # Validate MIME type if provided
             if 'mimeType' in data and data['mimeType']:
                 self.validate_mime_type(data['mimeType'], self.allowed_mime_types)
-            
-            # Get file extension if file data is provided
-            if 'fileName' in data and data['fileName']:
-                file_extension = self._get_file_extension(data['mimeType'], data['fileName'])
+                file_extension = self._get_file_extension(data['mimeType'], data.get('fileName'))
             
             # Decode and save document file if file data is provided
-            if 'fileData' in data and data['fileData']:
+            if 'fileData' in data and data['fileData'] and file_extension:
                 temp_file_path = self.decode_base64_data(data['fileData'], file_extension)
-            else:
-                temp_file_path = None
             
             try:
                 # Extract text from document
-                document_text = await self._extract_text(temp_file_path, file_extension)
+                if temp_file_path and file_extension:
+                    document_text = await self._extract_text(temp_file_path, file_extension)
+                else:
+                    # If no file data, use content directly as text
+                    document_text = data.get('content', '')
                 
                 # Summarize using Ollama Gemma
                 result = await self._summarize_with_ollama(document_text, data)
@@ -59,14 +103,15 @@ class DocumentProcessor(BaseProcessor):
                 return result
                 
             finally:
-                # Cleanup temp file
-                self.cleanup_temp_file(temp_file_path)
+                # Cleanup temp file if it exists
+                if temp_file_path:
+                    self.cleanup_temp_file(temp_file_path)
                 
         except Exception as e:
             print(f"❌ Erro no processamento de documento: {e}")
             raise
     
-    def _get_file_extension(self, mime_type: str, filename: str) -> str:
+    def _get_file_extension(self, mime_type: str, filename: str = None) -> str:
         """Obtém extensão do arquivo"""
         # Try to get from filename first
         if filename and '.' in filename:
@@ -285,7 +330,7 @@ TIPO: [tipo do documento]"""
             }
             
         except Exception as e:
-            logger.warning(f"⚠️ Erro ao fazer parse da sumarização: {e}")
+            print(f"⚠️ Erro ao fazer parse da sumarização: {e}")
             # Fallback
             return {
                 "summary": summary_text[:500] + "..." if len(summary_text) > 500 else summary_text,
