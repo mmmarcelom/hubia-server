@@ -1,0 +1,13 @@
+2025-09-10 00:35:04 | INFO     | __main__:main:41 - 🚀 Iniciando HubIA Workflow Server...
+2025-09-10 00:35:04 | INFO     | __main__:main:45 - 📋 Configuração carregada: LOQe (hubnordeste)
+2025-09-10 00:35:04 | INFO     | __main__:main:46 - 🌐 API URL: http://host.docker.internal:3000/api/v1
+2025-09-10 00:35:04 | INFO     | processors.base_processor:__init__:18 - 📁 Diretório temporário criado: /tmp/tmp4pi90ddr
+2025-09-10 00:35:04 | INFO     | processors.base_processor:__init__:18 - 📁 Diretório temporário criado: /tmp/tmp7vrbqtpy
+2025-09-10 00:35:04 | INFO     | processors.base_processor:__init__:18 - 📁 Diretório temporário criado: /tmp/tmpgvnke79o
+2025-09-10 00:35:04 | INFO     | processors.base_processor:__init__:18 - 📁 Diretório temporário criado: /tmp/tmpg3n29z0v
+2025-09-10 00:35:04 | INFO     | processors.base_processor:__init__:18 - 📁 Diretório temporário criado: /tmp/tmpz8ge4g00
+2025-09-10 00:35:04 | INFO     | workflow.workflow_client:__init__:40 - 🔧 Cliente de workflow inicializado: LOQe (hubnordeste)
+2025-09-10 00:35:04 | INFO     | __main__:main:51 - 🔄 Iniciando cliente de workflow...
+2025-09-10 00:35:04 | INFO     | workflow.workflow_client:start:45 - 🚀 Iniciando cliente de workflow...
+2025-09-10 00:35:04 | INFO     | workflow.workflow_client:_register_server:79 - 🔧 Registrando servidor na API...
+2025-09-10 00:35:05 | INFO     | workflow.workflow_client:_register_server:105 - ℹ️ Servidor já registrado. Usando chave existente.
