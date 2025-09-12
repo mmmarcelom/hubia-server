@@ -27,7 +27,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - hubia-network
+      - local-network
 
   ollama:
     image: ollama/ollama:latest
@@ -47,11 +47,11 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
     networks:
-      - hubia-network
+      - local-network
 
 volumes:
   ollama_data:
 
 networks:
-  hubia-network:
+  local-network:
     driver: bridge

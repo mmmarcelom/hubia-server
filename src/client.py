@@ -84,7 +84,7 @@ class WorkflowClient:
     async def _polling_request(self):
         """Etapa 1: Faz a requisição para buscar trabalho"""
         try:
-            print("🔍 Buscando trabalho disponível...", end=" ")
+            print("🔍 Pooling:", end=" ")
             
             async with httpx.AsyncClient(timeout=30.0) as client:
                 url = f"{self.config.api_url}/workflow/next"
@@ -98,9 +98,11 @@ class WorkflowClient:
             if hasattr(e, 'response') and e.response is not None:
                 status_code = e.response.status_code
                 if status_code == 500:
-                    print("⚠️ API indisponível (erro 500)")
+                    print("⚠️  Erro 500")
+                    print(e.response.json()['message'])
                 elif status_code == 404:
-                    print("⚠️ Endpoint não encontrado (erro 404)")
+                    print("⚠️ Erro 404")
+                    print("Endpoint não encontrado")
                 elif status_code == 401:
                     print("❌ Token de servidor inválido (erro 401)")
                     return None
@@ -165,46 +167,45 @@ class WorkflowClient:
     async def _send_response(self, task_id: str, task_type: str, success: bool, result: Optional[Dict[str, Any]], error: Optional[Dict[str, Any]]):
         """Envia resposta de processamento para o HubIA"""
         try:
+
+            payload = { "task_id": task_id, "type": task_type }
+
             # Prepara o resultado baseado no tipo de tarefa
             if success and result:
                 if task_type == EMBEDDING:
-                    response_result = {
-                        "embedding": result.get("embedding", []),
-                        "success": True
-                    }
+                    payload['success'] = True
+                    payload['data'] = result.get("embedding", [])
+
                 elif task_type == TRANSCRIBE:
-                    response_result = {
-                        "transcription": result.get("transcription", ""),
-                        "success": True
-                    }
+                    payload['success'] = True
+                    payload['data'] = result.get("transcription", "")
+                    
                 elif task_type == DESCRIBE:
-                    response_result = {
-                        "description": result.get("description", ""),
-                        "success": True
-                    }
+                    payload['success'] = True
+                    payload['data'] = result.get("description", "")
+                    
                 elif task_type == SUMMARIZE:
-                    response_result = {
-                        "summary": result.get("summary", ""),
-                        "success": True
-                    }
+                    payload['success'] = True
+                    payload['data'] = result.get("summary", "")
+                    
                 elif task_type == PROMPT:
-                    response_result = {
-                        "response": result.get("response", ""),
-                        "success": True
-                    }
-                else:
-                    response_result = {"success": True}
+                    payload['success'] = True
+                    payload['data'] = result.get("response", "")
+                    
             else:
-                response_result = {"success": False}
+                payload['success'] = False
+                payload['data'] = None
             
-            response_request = {
-                "task_id": task_id,
-                "type": task_type,
-                "result": response_result
-            }
-            
-            print(f"📤 Enviando resposta para API: {response_request}")
-            
+            resultToLog = payload.copy()
+            resultToLog['data'] = resultToLog['data'][:10]
+            print(f"📤 Enviando resposta para API: {resultToLog}")
+
+        except Exception as e:
+            print(f"❌ Erro ao preparar payload: {e}")
+            return
+
+        try:
+
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
                     f"{self.config.api_url}/workflow/responses",
@@ -212,28 +213,24 @@ class WorkflowClient:
                         "x-server-token": self.server_key,
                         "Content-Type": "application/json"
                     },
-                    json=response_request
+                    json=payload
                 )
-                
+
+                if response.status_code == 200:
+                    print(f"📤 Resposta enviada com sucesso para tarefa {task_id}")
+                    return
+
                 if response.status_code == 401:
                     print("❌ Token de servidor inválido ao enviar resposta")
                     return
-                
-                response.raise_for_status()
-                data = response.json()
-                
-                response_response = data
-                print(f"📥 Resposta da API: {response_response}")
-                
-                if response_response['success']:
-                    print(f"📤 Resposta enviada com sucesso para tarefa {task_id}")
-                else:
-                    print(f"❌ Erro ao enviar resposta: {response_response['message']}")
-                    
-        except httpx.HTTPError as e:
-            print(f"❌ Erro HTTP ao enviar resposta: {e}")
+
+                print(f"❌ Erro ao enviar resposta...")
+                print(f"Status code: {response.status_code}")
+                print(f"Response: {response.json()}")
+                return
+
         except Exception as e:
-            print(f"❌ Erro inesperado ao enviar resposta: {e}")
+            print(f"Erro: {e}")
     
     async def _sleep(self, seconds: int):
         """Aguarda o tempo especificado"""

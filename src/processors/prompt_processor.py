@@ -17,8 +17,16 @@ class PromptProcessor(BaseProcessor):
     async def process(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Processa prompt e retorna resposta"""
         try:
+            # Extract message from content field or message field
+            if 'content' in data:
+                message = data['content']
+            elif 'message' in data:
+                message = data['message']
+            else:
+                raise ValueError("Campo 'content' ou 'message' não encontrado nos dados")
+            
             # Validate text length
-            total_text_length = len(data['message'])
+            total_text_length = len(message)
             if 'context' in data and data['context']:
                 for context_item in data['context']:
                     total_text_length += len(context_item['content'])
@@ -26,8 +34,13 @@ class PromptProcessor(BaseProcessor):
             if total_text_length > self.config.max_text_length:
                 raise ValueError(f"Prompt muito longo: {total_text_length} caracteres (máximo: {self.config.max_text_length})")
             
+            # Prepare data for prompt processing
+            prompt_data = data.copy()
+            prompt_data['message'] = message
+            prompt_data['userMessage'] = message  # For compatibility
+            
             # Generate response using Ollama
-            result = await self._generate_response_with_ollama(data)
+            result = await self._generate_response_with_ollama(prompt_data)
             
             # Convert to dict
             return result

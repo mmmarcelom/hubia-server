@@ -30,7 +30,7 @@ class AudioProcessor(BaseProcessor):
                 print("💡 Instale manualmente: winget install ffmpeg")
                 return False
         else:
-            print("✅ FFmpeg encontrado!")
+            print("✅ FFmpeg encontrado!\n")
             return True
     
     def _prepare_audio_data(self, content: str) -> Dict[str, Any]:
