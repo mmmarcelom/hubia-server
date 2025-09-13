@@ -39,10 +39,10 @@ class ImageProcessor(BaseProcessor):
             file_size = len(image_data)
             
             return {
-                "imageData": data,
-                "mimeType": mime_type,
-                "fileSize": file_size,
-                "fileName": None  # Base64 data doesn't have filename
+                "image_data": data,
+                "mime_type": mime_type,
+                "file_size": file_size,
+                "file_name": None  # Base64 data doesn't have filename
             }
             
         except Exception as e:
@@ -55,21 +55,21 @@ class ImageProcessor(BaseProcessor):
             if 'content' in data:
                 # The image data is in the content field
                 data = self._prepare_image_data(data['content'])
-            elif 'imageData' in data and ('mimeType' not in data or 'fileSize' not in data):
-                # Fallback for direct imageData
-                data = self._prepare_image_data(data['imageData'])
+            elif 'image_data' in data and ('mime_type' not in data or 'file_size' not in data):
+                # Fallback for direct image_data
+                data = self._prepare_image_data(data['image_data'])
             
             # Validate file size
-            self.validate_file_size(data['fileSize'], self.config.max_image_size_bytes)
+            self.validate_file_size(data['file_size'], self.config.max_image_size_bytes)
             
             # Validate MIME type
-            self.validate_mime_type(data['mimeType'], self.allowed_mime_types)
+            self.validate_mime_type(data['mime_type'], self.allowed_mime_types)
             
             # Get file extension
-            file_extension = self._get_file_extension(data['mimeType'], data.get('fileName'))
+            file_extension = self._get_file_extension(data['mime_type'], data.get('file_name'))
             
             # Decode and save image file
-            temp_file_path = self.decode_base64_data(data['imageData'], file_extension)
+            temp_file_path = self.decode_base64_data(data['image_data'], file_extension)
             
             try:
                 # Process image with Ollama LLaVA

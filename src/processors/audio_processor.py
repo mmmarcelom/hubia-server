@@ -38,19 +38,19 @@ class AudioProcessor(BaseProcessor):
         if content.startswith('data:'):
             mime_type = content.split(';')[0].replace('data:', '')
             file_size = len(content) * 0.75  # Base64 é ~33% maior que o original
-            return { "content": content, "mimeType": mime_type, "fileSize": file_size }
+            return { "content": content, "mime_type": mime_type, "file_size": file_size }
         else:
             return {"content": content}
 
     async def process(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Processa áudio e retorna transcrição"""
         try:
-            if 'content' in data and 'mimeType' not in data:
+            if 'content' in data and 'mime_type' not in data:
                 data = self._prepare_audio_data(data['content'])
             
-            self.validate_file_size(data['fileSize'], self.config.max_audio_size_bytes)
-            self.validate_mime_type(data['mimeType'], self.allowed_mime_types)
-            file_extension = self._get_file_extension(data['mimeType'])
+            self.validate_file_size(data['file_size'], self.config.max_audio_size_bytes)
+            self.validate_mime_type(data['mime_type'], self.allowed_mime_types)
+            file_extension = self._get_file_extension(data['mime_type'])
             temp_file_path = self.decode_base64_data(data['content'], file_extension)
                
             try:

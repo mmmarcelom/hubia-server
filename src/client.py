@@ -153,7 +153,7 @@ class WorkflowClient:
             result = await processor.process(task)
             
             # Send successful response
-            await self._send_response(task['task_id'], task['action'], True, result, None)
+            await self._send_response(task['task_id'], task['action'], True, result, None, task)
             print(f"✅ Tarefa {task['task_id']} concluída com sucesso")
             
         except Exception as e:
@@ -162,13 +162,20 @@ class WorkflowClient:
             # Send error response
             error_detail = { "code": "PROCESSING_ERROR", "message": str(e), "details": f"Erro no processamento de {task['action']}" }
             
-            await self._send_response(task['task_id'], task['action'], False, None, error_detail)
+            await self._send_response(task['task_id'], task['action'], False, None, error_detail, task)
     
-    async def _send_response(self, task_id: str, task_type: str, success: bool, result: Optional[Dict[str, Any]], error: Optional[Dict[str, Any]]):
+    async def _send_response(self, task_id: str, task_type: str, success: bool, result: Optional[Dict[str, Any]], error: Optional[Dict[str, Any]], task_data: Optional[Dict[str, Any]] = None):
         """Envia resposta de processamento para o HubIA"""
         try:
 
-            payload = { "task_id": task_id, "type": task_type }
+            payload = { 
+                "task_id": task_id, 
+                "type": task_type,
+                "conversation_id": task_data.get('conversation_id') if task_data else None,
+                "client_id": task_data.get('client_id') if task_data else None,
+                "channel_id": task_data.get('channel_id') if task_data else None,
+                "metadata": task_data.get('metadata', {}) if task_data else {}
+            }
 
             # Prepara o resultado baseado no tipo de tarefa
             if success and result:
@@ -196,9 +203,10 @@ class WorkflowClient:
                 payload['success'] = False
                 payload['data'] = None
             
-            resultToLog = payload.copy()
-            resultToLog['data'] = resultToLog['data'][:10]
-            print(f"📤 Enviando resposta para API: {resultToLog}")
+            result_to_log = payload.copy()
+            if result_to_log.get('data') and isinstance(result_to_log['data'], str):
+                result_to_log['data'] = result_to_log['data'][:100]
+            print(f"📤 Enviando resposta para API: {result_to_log}")
 
         except Exception as e:
             print(f"❌ Erro ao preparar payload: {e}")

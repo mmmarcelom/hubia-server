@@ -42,19 +42,19 @@ class DocumentProcessor(BaseProcessor):
                 file_size = len(file_bytes)
                 
                 return {
-                    "fileData": file_data,
-                    "mimeType": mime_type,
-                    "fileSize": file_size,
-                    "fileName": None,
+                    "file_data": file_data,
+                    "mime_type": mime_type,
+                    "file_size": file_size,
+                    "file_name": None,
                     "content": content
                 }
             else:
                 # It's plain text content
                 return {
                     "content": content,
-                    "mimeType": "text/plain",
-                    "fileSize": len(content.encode('utf-8')),
-                    "fileName": None
+                    "mime_type": "text/plain",
+                    "file_size": len(content.encode('utf-8')),
+                    "file_name": None
                 }
                 
         except Exception as e:
@@ -67,26 +67,26 @@ class DocumentProcessor(BaseProcessor):
             if 'content' in data:
                 # The document data is in the content field
                 data = self._prepare_document_data(data['content'])
-            elif 'fileData' in data and ('mimeType' not in data or 'fileSize' not in data):
-                # Fallback for direct fileData
-                data = self._prepare_document_data(data['fileData'])
+            elif 'file_data' in data and ('mime_type' not in data or 'file_size' not in data):
+                # Fallback for direct file_data
+                data = self._prepare_document_data(data['file_data'])
             
             # Initialize variables
             temp_file_path = None
             file_extension = None
             
             # Validate file size if file data is provided
-            if 'fileSize' in data and data['fileSize']:
-                self.validate_file_size(data['fileSize'], self.config.max_document_size_bytes)
+            if 'file_size' in data and data['file_size']:
+                self.validate_file_size(data['file_size'], self.config.max_document_size_bytes)
             
             # Validate MIME type if provided
-            if 'mimeType' in data and data['mimeType']:
-                self.validate_mime_type(data['mimeType'], self.allowed_mime_types)
-                file_extension = self._get_file_extension(data['mimeType'], data.get('fileName'))
+            if 'mime_type' in data and data['mime_type']:
+                self.validate_mime_type(data['mime_type'], self.allowed_mime_types)
+                file_extension = self._get_file_extension(data['mime_type'], data.get('file_name'))
             
             # Decode and save document file if file data is provided
-            if 'fileData' in data and data['fileData'] and file_extension:
-                temp_file_path = self.decode_base64_data(data['fileData'], file_extension)
+            if 'file_data' in data and data['file_data'] and file_extension:
+                temp_file_path = self.decode_base64_data(data['file_data'], file_extension)
             
             try:
                 # Extract text from document
@@ -266,8 +266,8 @@ TIPO: [tipo do documento]"""
                 
                 return {
                     "summary": parsed_result["summary"],
-                    "keyPoints": parsed_result["keyPoints"],
-                    "documentType": parsed_result["documentType"],
+                    "key_points": parsed_result["key_points"],
+                    "document_type": parsed_result["document_type"],
                     "confidence": parsed_result["confidence"],
                     "success": True
                 }
@@ -324,8 +324,8 @@ TIPO: [tipo do documento]"""
             
             return {
                 "summary": summary,
-                "keyPoints": key_points[:8],  # Limit to 8 points
-                "documentType": document_type,
+                "key_points": key_points[:8],  # Limit to 8 points
+                "document_type": document_type,
                 "confidence": confidence
             }
             
@@ -334,7 +334,7 @@ TIPO: [tipo do documento]"""
             # Fallback
             return {
                 "summary": summary_text[:500] + "..." if len(summary_text) > 500 else summary_text,
-                "keyPoints": [],
-                "documentType": "documento",
+                "key_points": [],
+                "document_type": "documento",
                 "confidence": 0.7
             }
