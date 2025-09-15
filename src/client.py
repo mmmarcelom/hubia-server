@@ -131,6 +131,7 @@ class WorkflowClient:
                 return
             
             task_data = json_response['data']
+            
             print(f'📋 {task_data['action']}\n')
 
             await self._process_task(task_data)
@@ -171,6 +172,7 @@ class WorkflowClient:
             payload = { 
                 "task_id": task_id, 
                 "type": task_type,
+                "server_id": task_data.get('server_id') if task_data else None,
                 "conversation_id": task_data.get('conversation_id') if task_data else None,
                 "client_id": task_data.get('client_id') if task_data else None,
                 "channel_id": task_data.get('channel_id') if task_data else None,

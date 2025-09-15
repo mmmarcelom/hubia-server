@@ -14,6 +14,7 @@ class Config:
     api_url: str
     server_name: str
     slug: str
+    server_id: str
     server_key: Optional[str]
     
     # Ollama Configuration

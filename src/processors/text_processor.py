@@ -45,28 +45,57 @@ class TextProcessor(BaseProcessor):
         try:
             
             ollama_url = f"{self.config.ollama_base_url}/api/embeddings"
-            payload = { "model": self.config.ollama_model_embeddings, "prompt": text_content }
-            
+            payload = { 
+                "model": self.config.ollama_model_embeddings, 
+                "prompt": text_content,
+                "options": {
+                    "dimensions": 1536
+                }
+            }
+                        
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(ollama_url, json=payload)
-                response.raise_for_status()
+                
+                print(f"🔍 Status da resposta: {response.status_code}")
+                
+                if response.status_code != 200:
+                    print(f"❌ Erro HTTP: {response.status_code}")
+                    print(f"❌ Resposta: {response.text}")
+                    raise ValueError(f"Erro HTTP {response.status_code}: {response.text}")
+                
                 result = response.json()
+                
+                print(f"🔍 Resposta do Ollama: {result}")
+                
                 embedding = result.get("embedding", [])
                 
                 if not embedding:
+                    print(f"❌ Embedding vazio. Resposta completa: {result}")
                     raise ValueError("Embedding vazio retornado pelo modelo")
+                
+                # Validate dimensions - accept 768 or 1536
+                if len(embedding) not in [768, 1536]:
+                    print(f"❌ Dimensões incorretas: {len(embedding)} (esperado: 768 ou 1536)")
+                    raise ValueError(f"Embedding com dimensões incorretas: {len(embedding)} (esperado: 768 ou 1536)")
+                
+                # If 768 dimensions, pad to 1536
+                if len(embedding) == 768:
+                    print(f"⚠️ Embedding com 768 dimensões, preenchendo para 1536")
+                    # Pad with zeros to reach 1536 dimensions
+                    embedding = embedding + [0.0] * (1536 - 768)
                 
                 # Get model info
                 model_name = result.get("model", self.config.ollama_model_embeddings)
-                dimensions = len(embedding)
                 
                 # Estimate tokens (rough approximation)
                 tokens = len(text_content.split()) * 1.3  # Rough estimate
                 
+                print(f"✅ Embedding final com {len(embedding)} dimensões")
+                
                 return {
                     "embedding": embedding,
                     "model": model_name,
-                    "dimensions": dimensions,
+                    "dimensions": 1536,  # Always 1536
                     "tokens": int(tokens),
                     "success": True
                 }
