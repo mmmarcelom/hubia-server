@@ -4,11 +4,11 @@ Processador de prompt para geração de resposta usando Ollama Gemma
 
 import httpx
 from typing import Dict, Any, List
-from .base_processor import BaseProcessor
+from .base64_processor import Base64Processor
 # TaskType enum values
 PROMPT = "prompt"
 
-class PromptProcessor(BaseProcessor):
+class PromptProcessor(Base64Processor):
     """Processador de prompt para geração de resposta"""
     
     def __init__(self, config):

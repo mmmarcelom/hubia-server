@@ -52,7 +52,7 @@ class Config:
         self.slug = os.getenv("SLUG", "mvml")
         self.server_key = os.getenv("SERVER_KEY")
         
-        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
         self.ollama_model_transcricao = os.getenv("OLLAMA_MODEL_TRANSCRICAO", "gemma2:9b")
         self.ollama_model_visao = os.getenv("OLLAMA_MODEL_VISAO", "llava:7b")
         self.ollama_model_conversacao = os.getenv("OLLAMA_MODEL_CONVERSACAO", "gemma2:9b")

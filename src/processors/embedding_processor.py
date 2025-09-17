@@ -1,15 +1,15 @@
 """
-Processador de texto para geração de embeddings usando Ollama
+Processador de embeddings para geração de vetores usando Ollama
 """
 
 import httpx
 from typing import Dict, Any, List
-from .base_processor import BaseProcessor
+from .base64_processor import Base64Processor
 # TaskType enum values
 EMBEDDING = "embedding"
 
-class TextProcessor(BaseProcessor):
-    """Processador de texto para geração de embeddings"""
+class EmbeddingProcessor(Base64Processor):
+    """Processador de embeddings para geração de vetores"""
     
     def __init__(self, config):
         super().__init__(config)
@@ -30,17 +30,20 @@ class TextProcessor(BaseProcessor):
             if len(text_content) > self.config.max_text_length:
                 raise ValueError(f"Texto muito longo: {len(text_content)} caracteres (máximo: {self.config.max_text_length})")
             
+            # Determine dimensions based on action type
+            dimensions = 768 if data.get('action') == 'knowledge' else 1536
+            
             # Generate embedding using Ollama
-            result = await self._generate_embedding_with_ollama(text_content)
+            result = await self._generate_embedding_with_ollama(text_content, dimensions)
             
             # Convert to dict
             return result
             
         except Exception as e:
-            print(f"❌ Erro no processamento de texto: {e}")
+            print(f"❌ Erro no processamento de embedding: {e}")
             raise
     
-    async def _generate_embedding_with_ollama(self, text_content: str) -> Dict[str, Any]:
+    async def _generate_embedding_with_ollama(self, text_content: str, dimensions: int = 1536) -> Dict[str, Any]:
         """Gera embedding usando Ollama"""
         try:
             
@@ -48,9 +51,7 @@ class TextProcessor(BaseProcessor):
             payload = { 
                 "model": self.config.ollama_model_embeddings, 
                 "prompt": text_content,
-                "options": {
-                    "dimensions": 1536
-                }
+                "options": { "dimensions": dimensions }
             }
                         
             async with httpx.AsyncClient(timeout=60.0) as client:
@@ -65,24 +66,22 @@ class TextProcessor(BaseProcessor):
                 
                 result = response.json()
                 
-                print(f"🔍 Resposta do Ollama: {result}")
-                
                 embedding = result.get("embedding", [])
                 
                 if not embedding:
                     print(f"❌ Embedding vazio. Resposta completa: {result}")
                     raise ValueError("Embedding vazio retornado pelo modelo")
                 
-                # Validate dimensions - accept 768 or 1536
-                if len(embedding) not in [768, 1536]:
-                    print(f"❌ Dimensões incorretas: {len(embedding)} (esperado: 768 ou 1536)")
-                    raise ValueError(f"Embedding com dimensões incorretas: {len(embedding)} (esperado: 768 ou 1536)")
+                # Validate dimensions - accept original dimensions from model
+                if len(embedding) <= 0:
+                    print(f"❌ Embedding inválido: {len(embedding)} dimensões")
+                    raise ValueError(f"Embedding inválido: {len(embedding)} dimensões")
                 
-                # If 768 dimensions, pad to 1536
-                if len(embedding) == 768:
-                    print(f"⚠️ Embedding com 768 dimensões, preenchendo para 1536")
-                    # Pad with zeros to reach 1536 dimensions
-                    embedding = embedding + [0.0] * (1536 - 768)
+                # Log if dimensions don't match expected
+                if len(embedding) != dimensions:
+                    print(f"⚠️ Embedding recebido com {len(embedding)} dimensões, esperado {dimensions}")
+                
+                print(f"✅ Embedding recebido com {len(embedding)} dimensões")
                 
                 # Get model info
                 model_name = result.get("model", self.config.ollama_model_embeddings)
@@ -95,7 +94,7 @@ class TextProcessor(BaseProcessor):
                 return {
                     "embedding": embedding,
                     "model": model_name,
-                    "dimensions": 1536,  # Always 1536
+                    "dimensions": len(embedding),  # Real dimensions from model
                     "tokens": int(tokens),
                     "success": True
                 }

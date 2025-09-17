@@ -7,11 +7,11 @@ import io
 from typing import Dict, Any, List
 import httpx
 from PIL import Image
-from .base_processor import BaseProcessor
+from .base64_processor import Base64Processor
 # TaskType enum values
 DESCRIBE = "describe"
 
-class ImageProcessor(BaseProcessor):
+class ImageProcessor(Base64Processor):
     """Processador de imagem para descrição"""
     
     def __init__(self, config):

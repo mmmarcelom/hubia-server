@@ -24,7 +24,17 @@ async def main():
         
         # Load configuration
         config = Config()
-        print(f"🌐 {config.api_url}\n")
+        print(f"🌐 {config.api_url}")
+        
+        # Mostrar modelos configurados
+        print("\n📋 Modelos Ollama Configurados:")
+        print(f"   • Transcrição:     {config.ollama_model_transcricao}")
+        print(f"   • Visão:           {config.ollama_model_visao}")
+        print(f"   • Conversação:     {config.ollama_model_conversacao}")
+        print(f"   • Embeddings:      {config.ollama_model_embeddings} (768 dimensões)")
+        print(f"   • Resumo:          {config.ollama_model_resumo}")
+        print(f"   • URL Ollama:      {config.ollama_base_url}")
+        print("")
         
         # Verifica se temos SERVER_KEY antes de prosseguir
         if not config.server_key or config.server_key.strip() == "":

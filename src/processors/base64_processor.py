@@ -1,5 +1,5 @@
 """
-Processador base para todos os tipos de mídia
+Processador base64 para todos os tipos de mídia
 """
 
 import base64
@@ -9,8 +9,8 @@ from typing import Dict, Any, Optional
 from config import Config
 
 
-class BaseProcessor(ABC):
-    """Classe base para todos os processadores"""
+class Base64Processor(ABC):
+    """Classe base para processadores que trabalham com dados base64"""
     
     def __init__(self, config: Config):
         self.config = config

@@ -4,9 +4,9 @@ Processador de áudio para transcrição usando Ollama Whisper
 
 import os
 from typing import Dict, Any
-from .base_processor import BaseProcessor
+from .base64_processor import Base64Processor
 
-class AudioProcessor(BaseProcessor):
+class AudioProcessor(Base64Processor):
     """Processador de áudio para transcrição"""
     
     def __init__(self, config):

@@ -3,7 +3,7 @@ Processador de documentos para sumarização usando Ollama Gemma
 """
 import httpx
 from typing import Dict, Any, List
-from .base_processor import BaseProcessor
+from .base64_processor import Base64Processor
 # TaskType enum values
 SUMMARIZE = "summarize"
 
@@ -13,7 +13,7 @@ from docx import Document
 import openpyxl
 from io import BytesIO
 
-class DocumentProcessor(BaseProcessor):
+class DocumentProcessor(Base64Processor):
     """Processador de documentos para sumarização"""
     
     def __init__(self, config):

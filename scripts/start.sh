@@ -39,8 +39,17 @@ if ! wait_for_service "http://ollama:11434/api/tags" "Ollama"; then
 fi
 
 # Verificar se os modelos necessários estão disponíveis
-echo "📋 Verificando modelos Ollama..."
-MODELS=("llava:7b" "gemma2:9b" "nomic-embed-text")
+echo "📋 Verificando modelos Ollama necessários:"
+echo "   • llava:7b              - Visão (descrever imagens)"
+echo "   • gemma2:9b             - Conversação, transcrição e resumo"
+echo "   • nomic-embed-text      - Embeddings (768 dimensões)"
+echo ""
+
+MODELS=(
+    "llava:7b"              # Visão (descrever imagens)
+    "gemma2:9b"             # Conversação, transcrição e resumo
+    "nomic-embed-text"      # Embeddings (768 dimensões)
+)
 
 for model in "${MODELS[@]}"; do
     # Verificar se o modelo existe via API

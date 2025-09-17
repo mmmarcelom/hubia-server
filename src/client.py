@@ -13,8 +13,9 @@ TRANSCRIBE = "transcribe"
 DESCRIBE = "describe"
 SUMMARIZE = "summarize"
 PROMPT = "prompt"
+KNOWLEDGE = "knowledge"
 
-from processors import (AudioProcessor, ImageProcessor, DocumentProcessor, TextProcessor, PromptProcessor)
+from processors import (AudioProcessor, ImageProcessor, DocumentProcessor, EmbeddingProcessor, PromptProcessor)
 from config import Config
 
 class WorkflowClient:
@@ -30,8 +31,9 @@ class WorkflowClient:
             TRANSCRIBE: AudioProcessor(config),
             DESCRIBE: ImageProcessor(config),
             SUMMARIZE: DocumentProcessor(config),
-            EMBEDDING: TextProcessor(config),
-            PROMPT: PromptProcessor(config)
+            EMBEDDING: EmbeddingProcessor(config),
+            PROMPT: PromptProcessor(config),
+            KNOWLEDGE: EmbeddingProcessor(config)
         }
     
     async def start(self):
@@ -184,6 +186,12 @@ class WorkflowClient:
                 if task_type == EMBEDDING:
                     payload['success'] = True
                     payload['data'] = result.get("embedding", [])
+                    # Add embedding metadata
+                    payload['metadata'].update({
+                        'dimensions': result.get('dimensions', 0),
+                        'model': result.get('model', ''),
+                        'tokens': result.get('tokens', 0)
+                    })
 
                 elif task_type == TRANSCRIBE:
                     payload['success'] = True
@@ -200,6 +208,16 @@ class WorkflowClient:
                 elif task_type == PROMPT:
                     payload['success'] = True
                     payload['data'] = result.get("response", "")
+                    
+                elif task_type == KNOWLEDGE:
+                    payload['success'] = True
+                    payload['data'] = result.get("embedding", [])
+                    # Add knowledge embedding metadata
+                    payload['metadata'].update({
+                        'dimensions': result.get('dimensions', 0),
+                        'model': result.get('model', ''),
+                        'tokens': result.get('tokens', 0)
+                    })
                     
             else:
                 payload['success'] = False
