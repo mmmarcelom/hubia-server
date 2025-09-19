@@ -89,7 +89,7 @@ class WorkflowClient:
             print("🔍 Pooling:", end=" ")
             
             async with httpx.AsyncClient(timeout=30.0) as client:
-                url = f"{self.config.api_url}/workflow/next"
+                url = f"{self.config.api_url}/workflow/tasks"
                 headers = {"x-server-token": self.server_key}
                 response = await client.get(url, headers=headers)
                 
@@ -146,6 +146,8 @@ class WorkflowClient:
         """Processa uma tarefa específica"""
         try:
             print(f"⚙️  Processando tarefa: {task['action']} (ID: {task['task_id']})")
+            if task.get('message_id'):
+                print(f"📨 Message ID: {task['message_id']}")
             
             # Get the appropriate processor
             processor = self.processors.get(task['action'])
@@ -178,6 +180,7 @@ class WorkflowClient:
                 "conversation_id": task_data.get('conversation_id') if task_data else None,
                 "client_id": task_data.get('client_id') if task_data else None,
                 "channel_id": task_data.get('channel_id') if task_data else None,
+                "message_id": task_data.get('message_id') if task_data else None,
                 "metadata": task_data.get('metadata', {}) if task_data else {}
             }
 
@@ -224,8 +227,11 @@ class WorkflowClient:
                 payload['data'] = None
             
             result_to_log = payload.copy()
-            if result_to_log.get('data') and isinstance(result_to_log['data'], str):
-                result_to_log['data'] = result_to_log['data'][:100]
+            if result_to_log.get('data'):
+                if isinstance(result_to_log['data'], str):
+                    result_to_log['data'] = result_to_log['data'][:100]
+                elif isinstance(result_to_log['data'], list) and len(result_to_log['data']) > 10:
+                    result_to_log['data'] = result_to_log['data'][:10]
             print(f"📤 Enviando resposta para API: {result_to_log}")
 
         except Exception as e:
@@ -236,7 +242,7 @@ class WorkflowClient:
 
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
-                    f"{self.config.api_url}/workflow/responses",
+                    f"{self.config.api_url}/workflow/tasks",
                     headers={
                         "x-server-token": self.server_key,
                         "Content-Type": "application/json"
